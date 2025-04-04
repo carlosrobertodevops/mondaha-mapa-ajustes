@@ -22,10 +22,10 @@ def sanitize_filename(name):
 for feature in geojson_data["features"]:
     properties = feature["properties"]
     region_name = properties.get("NM_MUN")
-    
+
     if not region_name:
         continue  # Pula caso não haja nome definido
-    
+
     region_name = sanitize_filename(region_name)  # Nome sanitizado para arquivo
     file_path = os.path.join(output_dir, f"{region_name}.json")
 
