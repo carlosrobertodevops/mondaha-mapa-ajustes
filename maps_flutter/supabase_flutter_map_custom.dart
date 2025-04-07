@@ -265,22 +265,36 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                 child: Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text(
-                      '${entry.key}: ',
-                      style: TextStyle(
-                        fontSize: 16,
-                        fontWeight: FontWeight.w500,
-                        color: _getTooltipColor(
-                            '${entry.key}'), //FlutterFlowTheme.of(context).primary,
-                      ),
+                    Row(
+                      children: [
+                        Image.network(
+                          _getMarkerIcon(
+                              '${entry.key}'), // Substitua pela sua URL
+                          width: 24,
+                          height: 24,
+                          fit: BoxFit.cover,
+                          errorBuilder: (context, error, stackTrace) {
+                            return Icon(Icons.broken_image,
+                                size: 24, color: Colors.grey);
+                          },
+                        ),
+                        const SizedBox(width: 8),
+                        Text(
+                          '${entry.key}: ',
+                          style: TextStyle(
+                            fontSize: 16,
+                            fontWeight: FontWeight.w500,
+                            color: _getTooltipColor('${entry.key}'),
+                          ),
+                        ),
+                      ],
                     ),
                     Text(
                       '( ${entry.value} )',
                       style: TextStyle(
                         fontSize: 16,
                         fontWeight: FontWeight.bold,
-                        color: _getTooltipColor(
-                            '${entry.key}'), // FlutterFlowTheme.of(context).primary,
+                        color: _getTooltipColor('${entry.key}'),
                       ),
                     ),
                   ],
@@ -429,8 +443,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                 // Alternar entre os tipos de mapa
                 _selectedMapType = _nextMapType(_selectedMapType);
               });
-              // Atualiza os polígonos quando o tipo de mapa muda
-              // Aguarde as funções assíncronas terminarem
+              // Atualiza os polígonos quando o tipo de mapa muda e Aguarde as funções assíncronas terminarem
               await _fetchMarkers(_searchTerm);
               await _fetchPolygons();
               setState(() {
@@ -455,6 +468,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
     );
   }
 
+  // Selecionar o mapa
   String _nextMapType(String currentType) {
     List<String> types = [
       "osm",
@@ -509,7 +523,9 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
 
     Map<String, List<Map<String, dynamic>>> positionMap = {};
     Map<String, latLng.LatLng> adjustedPositions = {};
-    Map<String, int> tempFactionCount = {}; // Contador temporário
+
+    // Contador temporário
+    Map<String, int> tempFactionCount = {};
     int total = 0; // Contador total
 
     List<Marker> markers = response.map<Marker>((item) {
@@ -604,7 +620,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
       case 'BPL/PCC':
         return FFAppState().markerBlue1Custom;
       default:
-        return FFAppState().markerDefaultCustom;
+        return FFAppState().markerBlackCustom;
     }
   }
 
@@ -612,17 +628,17 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
   Color _getTooltipColor(String tipo) {
     switch (tipo) {
       case 'CV':
-        return FlutterFlowTheme.of(context).secondary.withOpacity(0.6);
+        return FlutterFlowTheme.of(context).secondary.withOpacity(0.7);
       case 'PCC':
-        return FlutterFlowTheme.of(context).primary.withOpacity(0.6);
+        return FlutterFlowTheme.of(context).primary.withOpacity(0.7);
       case 'BPL/PCC':
-        return FlutterFlowTheme.of(context).primary.withOpacity(0.6);
+        return FlutterFlowTheme.of(context).primary.withOpacity(0.7);
       default:
-        return FlutterFlowTheme.of(context).primaryBackground.withOpacity(0.6);
+        return FlutterFlowTheme.of(context).primaryBackground.withOpacity(0.7);
     }
   }
 
-  // Adicionando os Polígonos
+  // Adicionando os Poligonos
   Future<void> _fetchPolygons() async {
     final response = await supabase.from(widget.polygonTable).select();
 
@@ -636,6 +652,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
           .toList();
 
       String hexColor = item['cor_hex'];
+      double opacidade = item['opacidade'] ?? 0.1;
       double borderStrokeWidth = item['largura_linha'] ?? 3.0;
 
       // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
@@ -646,7 +663,13 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
 
       return Polygon(
         points: points,
-        color: _hexToColor(hexColor).withOpacity(0.3),
+        color: _hexToColor(hexColor).withOpacity(opacidade),
+        // label: item['nome'] ?? 'sem nome',
+        // labelPlacement: PolygonLabelPlacement.centroid,
+        // labelStyle: TextStyle(
+        //   color: Colors.black,
+        //   fontWeight: FontWeight.bold,
+        // ),
         borderColor: _hexToColor(hexColor),
         borderStrokeWidth: borderStrokeWidth,
       );
@@ -654,121 +677,12 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
 
     setState(() {
       _polygons = polygons;
-      _polygonItems =
-          validItems; // Salvamos os itens originais para mostrar nomes
     });
   }
 
-  // Função para detectar toque em polígonos
-  void _handleTapOnMap(TapPosition tapPosition, latLng.LatLng latLng) {
-    for (int i = 0; i < _polygons.length; i++) {
-      if (_isPointInsidePolygon(latLng, _polygons[i].points)) {
-        _mostrarTooltip(
-            context, _polygonItems[i]['nome'] ?? 'Sem nome', latLng);
-        return;
-      }
-    }
-    _removerTooltip(); // Remove tooltip se nenhum polígono for clicado
-  }
-
-  // Algoritmo para verificar se um ponto está dentro de um polígono (Ray-casting)
-  bool _isPointInsidePolygon(latLng.LatLng point, List<latLng.LatLng> polygon) {
-    int j = polygon.length - 1;
-    bool inside = false;
-    for (int i = 0; i < polygon.length; i++) {
-      if ((polygon[i].latitude > point.latitude) !=
-              (polygon[j].latitude > point.latitude) &&
-          (point.longitude <
-              (polygon[j].longitude - polygon[i].longitude) *
-                      (point.latitude - polygon[i].latitude) /
-                      (polygon[j].latitude - polygon[i].latitude) +
-                  polygon[i].longitude)) {
-        inside = !inside;
-      }
-      j = i;
-    }
-    return inside;
-  }
-
-  // Função para exibir tooltip ao clicar no polígono
-  void _mostrarTooltip(BuildContext context, String nome, latLng.LatLng ponto) {
-    _removerTooltip(); // Remove tooltip anterior
-
-    final overlay = Overlay.of(context);
-    _tooltipOverlay = OverlayEntry(
-      builder: (context) => Positioned(
-        top: 100, // Ajuste conforme necessário
-        left: 100,
-        child: Material(
-          color: Colors.transparent,
-          child: Container(
-            padding: EdgeInsets.all(8),
-            decoration: BoxDecoration(
-              color: Colors.black.withOpacity(0.8),
-              borderRadius: BorderRadius.circular(4),
-            ),
-            child: Text(
-              nome,
-              style:
-                  TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-            ),
-          ),
-        ),
-      ),
-    );
-
-    overlay.insert(_tooltipOverlay!);
-    Future.delayed(Duration(seconds: 2), () => _removerTooltip());
-  }
-
-  void _removerTooltip() {
-    _tooltipOverlay?.remove();
-    _tooltipOverlay = null;
-  }
-
-  // Conversão de HEX para Color
   Color _hexToColor(String hex) {
     return Color(int.parse(hex.replaceFirst('#', '0xFF')));
   }
-
-  // // Adicionando os Poligonos
-  // Future<void> _fetchPolygons() async {
-  //   final response = await supabase.from(widget.polygonTable).select();
-
-  //   // Filtrar apenas os itens que possuem uma cor definida
-  //   List validItems =
-  //       response.where((item) => item['cor_hex'] != null).toList();
-
-  //   List<Polygon> polygons = validItems.map<Polygon>((item) {
-  //     List<latLng.LatLng> points = (item['coordenadas'] as List)
-  //         .map((coord) => latLng.LatLng(coord['lat'], coord['lng']))
-  //         .toList();
-
-  //     String hexColor = item['cor_hex'];
-  //     double borderStrokeWidth = item['largura_linha'] ?? 3.0;
-
-  //     // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
-  //     if (hexColor.toUpperCase() == "#000000" &&
-  //         (_selectedMapType == "dark" || _selectedMapType == "satellite")) {
-  //       hexColor = "#FFFFFF";
-  //     }
-
-  //     return Polygon(
-  //       points: points,
-  //       color: _hexToColor(hexColor).withOpacity(0.1),
-  //       borderColor: _hexToColor(hexColor),
-  //       borderStrokeWidth: borderStrokeWidth,
-  //     );
-  //   }).toList(); // Agora, não há risco de valores nulos
-
-  //   setState(() {
-  //     _polygons = polygons;
-  //   });
-  // }
-
-  // Color _hexToColor(String hex) {
-  //   return Color(int.parse(hex.replaceFirst('#', '0xFF')));
-  // }
 
   void _showMemberDetails(List<Map<String, dynamic>> members) {
     showModalBottomSheet(

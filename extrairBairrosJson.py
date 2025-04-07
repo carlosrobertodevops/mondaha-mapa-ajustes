@@ -44,10 +44,10 @@ for feature in geojson_data["features"]:
     if geometry["type"] == "MultiPolygon":
         for polygon in geometry["coordinates"]:
             for coordinates in polygon:
-                jsonb_formatted.extend([{"lat": coord[1], "lng": coord[0]} for coord in coordinates])
+                jsonb_formatted.extend([{"lat": round(coord[1], 6), "lng": round(coord[0], 6)} for coord in coordinates])
     elif geometry["type"] == "Polygon":
         for coordinates in geometry["coordinates"]:
-            jsonb_formatted.extend([{"lat": coord[1], "lng": coord[0]} for coord in coordinates])
+            jsonb_formatted.extend([{"lat": round(coord[1], 6), "lng": round(coord[0], 6)} for coord in coordinates])
     else:
         continue  # Pula geometrias não suportadas
 
