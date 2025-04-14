@@ -1,7 +1,23 @@
 // Automatic FlutterFlow imports
 import '/backend/backend.dart';
+import "package:community_testing_ryusdv/backend/schema/structs/index.dart"
+    as community_testing_ryusdv_data_schema;
+import "package:utility_functions_library_8g4bud/backend/schema/structs/index.dart"
+    as utility_functions_library_8g4bud_data_schema;
+import "package:shadcn_u_i_kit_v48jv9/backend/schema/structs/index.dart"
+    as shadcn_u_i_kit_v48jv9_data_schema;
 import '/backend/schema/structs/index.dart';
 import '/backend/supabase/supabase.dart';
+import "package:community_testing_ryusdv/backend/schema/structs/index.dart"
+    as community_testing_ryusdv_data_schema;
+import "package:utility_functions_library_8g4bud/backend/schema/structs/index.dart"
+    as utility_functions_library_8g4bud_data_schema;
+import "package:shadcn_u_i_kit_v48jv9/backend/schema/structs/index.dart"
+    as shadcn_u_i_kit_v48jv9_data_schema;
+import "package:community_testing_ryusdv/backend/schema/enums/enums.dart"
+    as community_testing_ryusdv_enums;
+import "package:shadcn_u_i_kit_v48jv9/backend/schema/enums/enums.dart"
+    as shadcn_u_i_kit_v48jv9_enums;
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/custom_code/widgets/index.dart'; // Imports other custom widgets
@@ -66,6 +82,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
   final MapController _mapController = MapController();
 
   bool _isLoadingUpdate = false;
+  bool _isLoadingCenter = false;
   bool _isLoadingMapChange = false;
 
   List<Marker> _markers = [];
@@ -97,7 +114,6 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
   // Limpar à memóraa
   @override
   void dispose() {
-    // supabase.dispose();
     _searchController.dispose();
     super.dispose();
   }
@@ -111,7 +127,6 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
         _markers.clear();
         _polygons.clear();
       });
-
       _fetchMarkers(widget.searchTerm);
       _fetchPolygons();
     }
@@ -148,7 +163,144 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
     );
   }
 
-  // opção de busca dentro do próprio mapa
+  // Adicionar markers no Mapa e ajustar os deslocalmentoa
+  Future<void> _fetchMarkers(String searchTerm) async {
+    final response = await supabase
+        .from(widget.memberTable)
+        .select()
+        .ilike('pesquisa', '%$searchTerm%');
+
+    Map<String, List<Map<String, dynamic>>> positionMap = {};
+    Map<String, latLng.LatLng> adjustedPositions = {};
+
+    // Contador temporário
+    Map<String, int> tempFactionCount = {};
+    int total = 0; // Contador total
+
+    List<Marker> markers =
+        response.map<Marker>((item) {
+          double lat = item['latitude'];
+          double lng = item['longitude'];
+
+          String positionKey = "$lat,$lng";
+
+          if (positionMap.containsKey(positionKey)) {
+            positionMap[positionKey]!.add(item);
+            double offset = _getSmallOffset(positionMap[positionKey]!.length);
+            lat += offset;
+            lng += offset;
+          } else {
+            positionMap[positionKey] = [item];
+          }
+
+          latLng.LatLng adjustedPosition = latLng.LatLng(lat, lng);
+          adjustedPositions[item['id'].toString()] =
+              adjustedPosition; // Salva a posição ajustada
+
+          // Atualiza a contagem de facção
+          String faction = item['faccao_nome'] ?? 'Desconhecido';
+          tempFactionCount[faction] = (tempFactionCount[faction] ?? 0) + 1;
+          total++; // Incrementa o total
+
+          return Marker(
+            width: 40,
+            height: 40,
+            point: adjustedPosition,
+            child: GestureDetector(
+              //onTap: () => _showMemberDetails([item]),
+              onTap: () {
+                widget.onMarkerMemberId!(item['membro_id']);
+              },
+              child: Tooltip(
+                message:
+                    ' (' + item['faccao_nome'] + ') ' + item['nome_completo'] ??
+                    'Sem nome',
+                padding: EdgeInsets.all(8), // Adicionando espaço interno
+                decoration: BoxDecoration(
+                  color: _getTooltipColor(item['faccao_nome']), // Cor de fundo
+                  borderRadius: BorderRadius.circular(4), // Bordas arredondadas
+                ),
+                textStyle: TextStyle(
+                  color:
+                      FlutterFlowTheme.of(context).primaryText, // Cor do texto
+                  fontWeight: FontWeight.bold,
+                ),
+                preferBelow: false, // Tooltip aparece acima do ícone
+                waitDuration: Duration(
+                  seconds: 1,
+                ), // Tempo para o balão aparecer
+                child: Image.network(
+                  _getMarkerIcon(item['faccao_nome']) ??
+                      FFAppState().markerDefault,
+                  width: 40,
+                  height: 40,
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      FFAppState().markerDefault,
+                      width: 40,
+                      height: 40,
+                    );
+                  },
+                ),
+              ),
+            ),
+          );
+        }).toList();
+
+    setState(() {
+      _markers = markers;
+      _factionCount = tempFactionCount;
+      _totalMembers = total;
+    });
+  }
+
+  // Adicionando os Poligonos
+  Future<void> _fetchPolygons() async {
+    final response = await supabase.from(widget.polygonTable).select();
+
+    // Filtrar apenas os itens que possuem uma cor definida
+    List validItems =
+        response.where((item) => item['visivel'] == true).toList();
+
+    List<Polygon> polygons =
+        validItems.map<Polygon>((item) {
+          List<latLng.LatLng> points =
+              (item['coordenadas'] as List)
+                  .map((coord) => latLng.LatLng(coord['lat'], coord['lng']))
+                  .toList();
+
+          String hexColor = item['cor_hex'];
+          double opacidade = item['opacidade'] ?? 0.1;
+          double borderStrokeWidth = item['largura_linha'] ?? 3.0;
+
+          // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
+          if (hexColor.toUpperCase() == "#000000" &&
+              (_selectedMapType == "dark" || _selectedMapType == "satellite")) {
+            hexColor = "#FFFFFF";
+          }
+
+          return Polygon(
+            points: points,
+            color: _hexToColor(hexColor).withOpacity(opacidade),
+            // label: item['nome'] ?? 'sem nome',
+            // labelPlacement: PolygonLabelPlacement.centroid,
+            // labelStyle: TextStyle(
+            //   color: Colors.black,
+            //   fontWeight: FontWeight.bold,
+            // ),
+            borderColor: _hexToColor(hexColor),
+            borderStrokeWidth: borderStrokeWidth,
+          );
+        }).toList(); // Agora, não há risco de valores nulos
+
+    setState(() {
+      _polygons = polygons;
+    });
+  }
+
+  // IMPLEMENTAÇÕES UTEIS NO MAPS
+
+  // Opção de busca dentro do próprio mapa
   Widget _buildFloatingSearch() {
     return Positioned(
       top: 16,
@@ -362,12 +514,32 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
             tooltip: 'Centro do Mapa',
             backgroundColor: FlutterFlowTheme.of(context).primary,
             foregroundColor: FlutterFlowTheme.of(context).info,
-            onPressed:
-                () => _mapController.move(
+            onPressed: () async {
+              setState(() {
+                _isLoadingCenter = true;
+                _mapController.move(
                   latLng.LatLng(widget.initialLat, widget.initialLng),
                   widget.zoom,
-                ),
-            child: Icon(Icons.center_focus_strong),
+                );
+              });
+
+              setState(() {
+                _isLoadingCenter = false;
+              });
+            },
+            child:
+                _isLoadingCenter
+                    ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          FlutterFlowTheme.of(context).info,
+                        ),
+                        strokeWidth: 2.5,
+                      ),
+                    )
+                    : Icon(Icons.center_focus_strong),
           ),
           SizedBox(height: 10),
 
@@ -529,97 +701,6 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
     _mapController.move(newCenter, _mapController.camera.zoom);
   }
 
-  // Adicionar markers no Mapa e ajustar os deslocalmentoa
-  Future<void> _fetchMarkers(String searchTerm) async {
-    final response = await supabase
-        .from(widget.memberTable)
-        .select()
-        .ilike('pesquisa', '%$searchTerm%');
-
-    Map<String, List<Map<String, dynamic>>> positionMap = {};
-    Map<String, latLng.LatLng> adjustedPositions = {};
-
-    // Contador temporário
-    Map<String, int> tempFactionCount = {};
-    int total = 0; // Contador total
-
-    List<Marker> markers =
-        response.map<Marker>((item) {
-          double lat = item['latitude'];
-          double lng = item['longitude'];
-
-          String positionKey = "$lat,$lng";
-
-          if (positionMap.containsKey(positionKey)) {
-            positionMap[positionKey]!.add(item);
-            double offset = _getSmallOffset(positionMap[positionKey]!.length);
-            lat += offset;
-            lng += offset;
-          } else {
-            positionMap[positionKey] = [item];
-          }
-
-          latLng.LatLng adjustedPosition = latLng.LatLng(lat, lng);
-          adjustedPositions[item['id'].toString()] =
-              adjustedPosition; // Salva a posição ajustada
-
-          // Atualiza a contagem de facção
-          String faction = item['faccao_nome'] ?? 'Desconhecido';
-          tempFactionCount[faction] = (tempFactionCount[faction] ?? 0) + 1;
-          total++; // Incrementa o total
-
-          return Marker(
-            width: 40,
-            height: 40,
-            point: adjustedPosition,
-            child: GestureDetector(
-              //onTap: () => _showMemberDetails([item]),
-              onTap: () {
-                widget.onMarkerMemberId!(item['membro_id']);
-              },
-              child: Tooltip(
-                message:
-                    ' (' + item['faccao_nome'] + ') ' + item['nome_completo'] ??
-                    'Sem nome',
-                padding: EdgeInsets.all(8), // Adicionando espaço interno
-                decoration: BoxDecoration(
-                  color: _getTooltipColor(item['faccao_nome']), // Cor de fundo
-                  borderRadius: BorderRadius.circular(4), // Bordas arredondadas
-                ),
-                textStyle: TextStyle(
-                  color:
-                      FlutterFlowTheme.of(context).primaryText, // Cor do texto
-                  fontWeight: FontWeight.bold,
-                ),
-                preferBelow: false, // Tooltip aparece acima do ícone
-                waitDuration: Duration(
-                  seconds: 1,
-                ), // Tempo para o balão aparecer
-                child: Image.network(
-                  _getMarkerIcon(item['faccao_nome']) ??
-                      FFAppState().markerDefault,
-                  width: 40,
-                  height: 40,
-                  errorBuilder: (context, error, stackTrace) {
-                    return Image.network(
-                      FFAppState().markerDefault,
-                      width: 40,
-                      height: 40,
-                    );
-                  },
-                ),
-              ),
-            ),
-          );
-        }).toList();
-
-    setState(() {
-      _markers = markers;
-      _factionCount = tempFactionCount;
-      _totalMembers = total;
-    });
-  }
-
   // Função para gerar um pequeno deslocamento
   double _getSmallOffset(int count) {
     final random = Random();
@@ -656,50 +737,6 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
       default:
         return FlutterFlowTheme.of(context).primaryBackground.withOpacity(0.7);
     }
-  }
-
-  // Adicionando os Poligonos
-  Future<void> _fetchPolygons() async {
-    final response = await supabase.from(widget.polygonTable).select();
-
-    // Filtrar apenas os itens que possuem uma cor definida
-    List validItems =
-        response.where((item) => item['cor_hex'] != null).toList();
-
-    List<Polygon> polygons =
-        validItems.map<Polygon>((item) {
-          List<latLng.LatLng> points =
-              (item['coordenadas'] as List)
-                  .map((coord) => latLng.LatLng(coord['lat'], coord['lng']))
-                  .toList();
-
-          String hexColor = item['cor_hex'];
-          double opacidade = item['opacidade'] ?? 0.1;
-          double borderStrokeWidth = item['largura_linha'] ?? 3.0;
-
-          // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
-          if (hexColor.toUpperCase() == "#000000" &&
-              (_selectedMapType == "dark" || _selectedMapType == "satellite")) {
-            hexColor = "#FFFFFF";
-          }
-
-          return Polygon(
-            points: points,
-            color: _hexToColor(hexColor).withOpacity(opacidade),
-            // label: item['nome'] ?? 'sem nome',
-            // labelPlacement: PolygonLabelPlacement.centroid,
-            // labelStyle: TextStyle(
-            //   color: Colors.black,
-            //   fontWeight: FontWeight.bold,
-            // ),
-            borderColor: _hexToColor(hexColor),
-            borderStrokeWidth: borderStrokeWidth,
-          );
-        }).toList(); // Agora, não há risco de valores nulos
-
-    setState(() {
-      _polygons = polygons;
-    });
   }
 
   Color _hexToColor(String hex) {
