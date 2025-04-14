@@ -1,13 +1,7 @@
 // Automatic FlutterFlow imports
 import '/backend/backend.dart';
-import "package:community_testing_ryusdv/backend/schema/structs/index.dart"
-    as community_testing_ryusdv_data_schema;
 import '/backend/schema/structs/index.dart';
 import '/backend/supabase/supabase.dart';
-import "package:community_testing_ryusdv/backend/schema/structs/index.dart"
-    as community_testing_ryusdv_data_schema;
-import "package:community_testing_ryusdv/backend/schema/enums/enums.dart"
-    as community_testing_ryusdv_enums;
 import 'package:ff_theme/flutter_flow/flutter_flow_theme.dart';
 import '/flutter_flow/flutter_flow_util.dart';
 import '/custom_code/widgets/index.dart'; // Imports other custom widgets
@@ -93,8 +87,6 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
   @override
   void initState() {
     super.initState();
-    // _isLoadingUpdate = false;
-    // _isLoadingMapChange = false;
     _fetchMarkers(widget.searchTerm);
     _fetchPolygons();
     _searchController.addListener(() {
@@ -134,8 +126,10 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
-              initialCenter:
-                  latLng.LatLng(widget.initialLat, widget.initialLng),
+              initialCenter: latLng.LatLng(
+                widget.initialLat,
+                widget.initialLng,
+              ),
               initialZoom: widget.zoom,
               minZoom: widget.minZoom,
               maxZoom: widget.maxZoom,
@@ -177,8 +171,10 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
               // Define a borda
               borderRadius: BorderRadius.circular(12), // Define o raio da borda
               borderSide: BorderSide(
-                color: FlutterFlowTheme.of(context)
-                    .primary, // Define a cor da borda
+                color:
+                    FlutterFlowTheme.of(
+                      context,
+                    ).primary, // Define a cor da borda
                 width: 2, // Define a largura da borda
               ),
             ),
@@ -198,21 +194,26 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                 width: 2.5,
               ),
             ),
-            suffixIcon: _searchController.text.isNotEmpty
-                ? IconButton(
-                    icon: Icon(Icons.clear,
-                        color: FlutterFlowTheme.of(context).primary),
-                    onPressed: () {
-                      setState(() {
-                        _searchController.clear();
-                        _searchTerm = "";
-                        _fetchMarkers(_searchTerm);
-                        _fetchPolygons();
-                      });
-                    },
-                  )
-                : Icon(Icons.search,
-                    color: FlutterFlowTheme.of(context).primary),
+            suffixIcon:
+                _searchController.text.isNotEmpty
+                    ? IconButton(
+                      icon: Icon(
+                        Icons.clear,
+                        color: FlutterFlowTheme.of(context).primary,
+                      ),
+                      onPressed: () {
+                        setState(() {
+                          _searchController.clear();
+                          _searchTerm = "";
+                          _fetchMarkers(_searchTerm);
+                          _fetchPolygons();
+                        });
+                      },
+                    )
+                    : Icon(
+                      Icons.search,
+                      color: FlutterFlowTheme.of(context).primary,
+                    ),
           ),
           cursorColor: FlutterFlowTheme.of(context).primary,
           onSubmitted: (value) {
@@ -269,13 +270,17 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                       children: [
                         Image.network(
                           _getMarkerIcon(
-                              '${entry.key}'), // Substitua pela sua URL
+                            '${entry.key}',
+                          ), // Substitua pela sua URL
                           width: 24,
                           height: 24,
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
-                            return Icon(Icons.broken_image,
-                                size: 24, color: Colors.grey);
+                            return Icon(
+                              Icons.broken_image,
+                              size: 24,
+                              color: Colors.grey,
+                            );
                           },
                         ),
                         const SizedBox(width: 8),
@@ -335,18 +340,19 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                 _isLoadingUpdate = false;
               });
             },
-            child: _isLoadingUpdate
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        FlutterFlowTheme.of(context).info,
+            child:
+                _isLoadingUpdate
+                    ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          FlutterFlowTheme.of(context).info,
+                        ),
+                        strokeWidth: 2.5,
                       ),
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : Icon(Icons.refresh_outlined),
+                    )
+                    : Icon(Icons.refresh_outlined),
           ),
           SizedBox(height: 10),
 
@@ -356,9 +362,11 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
             tooltip: 'Centro do Mapa',
             backgroundColor: FlutterFlowTheme.of(context).primary,
             foregroundColor: FlutterFlowTheme.of(context).info,
-            onPressed: () => _mapController.move(
-                latLng.LatLng(widget.initialLat, widget.initialLng),
-                widget.zoom),
+            onPressed:
+                () => _mapController.move(
+                  latLng.LatLng(widget.initialLat, widget.initialLng),
+                  widget.zoom,
+                ),
             child: Icon(Icons.center_focus_strong),
           ),
           SizedBox(height: 10),
@@ -369,8 +377,11 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
             tooltip: 'Aumentar o Zoom',
             backgroundColor: FlutterFlowTheme.of(context).primary,
             foregroundColor: FlutterFlowTheme.of(context).info,
-            onPressed: () => _mapController.move(
-                _mapController.camera.center, _mapController.camera.zoom + 1),
+            onPressed:
+                () => _mapController.move(
+                  _mapController.camera.center,
+                  _mapController.camera.zoom + 1,
+                ),
             child: Icon(Icons.zoom_in),
           ),
           SizedBox(height: 10),
@@ -381,8 +392,11 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
             tooltip: 'Diminuir o Zoom',
             backgroundColor: FlutterFlowTheme.of(context).primary,
             foregroundColor: FlutterFlowTheme.of(context).info,
-            onPressed: () => _mapController.move(
-                _mapController.camera.center, _mapController.camera.zoom - 1),
+            onPressed:
+                () => _mapController.move(
+                  _mapController.camera.center,
+                  _mapController.camera.zoom - 1,
+                ),
             child: Icon(Icons.zoom_out),
           ),
           SizedBox(height: 10),
@@ -450,18 +464,19 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
                 _isLoadingMapChange = false;
               });
             },
-            child: _isLoadingMapChange
-                ? SizedBox(
-                    width: 24,
-                    height: 24,
-                    child: CircularProgressIndicator(
-                      valueColor: AlwaysStoppedAnimation<Color>(
-                        FlutterFlowTheme.of(context).info,
+            child:
+                _isLoadingMapChange
+                    ? SizedBox(
+                      width: 24,
+                      height: 24,
+                      child: CircularProgressIndicator(
+                        valueColor: AlwaysStoppedAnimation<Color>(
+                          FlutterFlowTheme.of(context).info,
+                        ),
+                        strokeWidth: 2.5,
                       ),
-                      strokeWidth: 2.5,
-                    ),
-                  )
-                : Icon(Icons.map),
+                    )
+                    : Icon(Icons.map),
           ),
         ],
       ),
@@ -476,7 +491,7 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
       "satellite",
       "dark",
       "light",
-      "lightgray"
+      "lightgray",
     ];
     int index = types.indexOf(currentType);
     return types[(index + 1) % types.length];
@@ -528,70 +543,75 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
     Map<String, int> tempFactionCount = {};
     int total = 0; // Contador total
 
-    List<Marker> markers = response.map<Marker>((item) {
-      double lat = item['latitude'];
-      double lng = item['longitude'];
+    List<Marker> markers =
+        response.map<Marker>((item) {
+          double lat = item['latitude'];
+          double lng = item['longitude'];
 
-      String positionKey = "$lat,$lng";
+          String positionKey = "$lat,$lng";
 
-      if (positionMap.containsKey(positionKey)) {
-        positionMap[positionKey]!.add(item);
-        double offset = _getSmallOffset(positionMap[positionKey]!.length);
-        lat += offset;
-        lng += offset;
-      } else {
-        positionMap[positionKey] = [item];
-      }
+          if (positionMap.containsKey(positionKey)) {
+            positionMap[positionKey]!.add(item);
+            double offset = _getSmallOffset(positionMap[positionKey]!.length);
+            lat += offset;
+            lng += offset;
+          } else {
+            positionMap[positionKey] = [item];
+          }
 
-      latLng.LatLng adjustedPosition = latLng.LatLng(lat, lng);
-      adjustedPositions[item['id'].toString()] =
-          adjustedPosition; // Salva a posição ajustada
+          latLng.LatLng adjustedPosition = latLng.LatLng(lat, lng);
+          adjustedPositions[item['id'].toString()] =
+              adjustedPosition; // Salva a posição ajustada
 
-      // Atualiza a contagem de facção
-      String faction = item['faccao_nome'] ?? 'Desconhecido';
-      tempFactionCount[faction] = (tempFactionCount[faction] ?? 0) + 1;
-      total++; // Incrementa o total
+          // Atualiza a contagem de facção
+          String faction = item['faccao_nome'] ?? 'Desconhecido';
+          tempFactionCount[faction] = (tempFactionCount[faction] ?? 0) + 1;
+          total++; // Incrementa o total
 
-      return Marker(
-        width: 40,
-        height: 40,
-        point: adjustedPosition,
-        child: GestureDetector(
-          //onTap: () => _showMemberDetails([item]),
-          onTap: () {
-            widget.onMarkerMemberId!(item['membro_id']);
-          },
-          child: Tooltip(
-            message:
-                ' (' + item['faccao_nome'] + ') ' + item['nome_completo'] ??
+          return Marker(
+            width: 40,
+            height: 40,
+            point: adjustedPosition,
+            child: GestureDetector(
+              //onTap: () => _showMemberDetails([item]),
+              onTap: () {
+                widget.onMarkerMemberId!(item['membro_id']);
+              },
+              child: Tooltip(
+                message:
+                    ' (' + item['faccao_nome'] + ') ' + item['nome_completo'] ??
                     'Sem nome',
-            padding: EdgeInsets.all(8), // Adicionando espaço interno
-            decoration: BoxDecoration(
-              color: _getTooltipColor(item['faccao_nome']), // Cor de fundo
-              borderRadius: BorderRadius.circular(4), // Bordas arredondadas
-            ),
-            textStyle: TextStyle(
-              color: FlutterFlowTheme.of(context).primaryText, // Cor do texto
-              fontWeight: FontWeight.bold,
-            ),
-            preferBelow: false, // Tooltip aparece acima do ícone
-            waitDuration: Duration(seconds: 1), // Tempo para o balão aparecer
-            child: Image.network(
-              _getMarkerIcon(item['faccao_nome']) ?? FFAppState().markerDefault,
-              width: 40,
-              height: 40,
-              errorBuilder: (context, error, stackTrace) {
-                return Image.network(
-                  FFAppState().markerDefault,
+                padding: EdgeInsets.all(8), // Adicionando espaço interno
+                decoration: BoxDecoration(
+                  color: _getTooltipColor(item['faccao_nome']), // Cor de fundo
+                  borderRadius: BorderRadius.circular(4), // Bordas arredondadas
+                ),
+                textStyle: TextStyle(
+                  color:
+                      FlutterFlowTheme.of(context).primaryText, // Cor do texto
+                  fontWeight: FontWeight.bold,
+                ),
+                preferBelow: false, // Tooltip aparece acima do ícone
+                waitDuration: Duration(
+                  seconds: 1,
+                ), // Tempo para o balão aparecer
+                child: Image.network(
+                  _getMarkerIcon(item['faccao_nome']) ??
+                      FFAppState().markerDefault,
                   width: 40,
                   height: 40,
-                );
-              },
+                  errorBuilder: (context, error, stackTrace) {
+                    return Image.network(
+                      FFAppState().markerDefault,
+                      width: 40,
+                      height: 40,
+                    );
+                  },
+                ),
+              ),
             ),
-          ),
-        ),
-      );
-    }).toList();
+          );
+        }).toList();
 
     setState(() {
       _markers = markers;
@@ -646,34 +666,36 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
     List validItems =
         response.where((item) => item['cor_hex'] != null).toList();
 
-    List<Polygon> polygons = validItems.map<Polygon>((item) {
-      List<latLng.LatLng> points = (item['coordenadas'] as List)
-          .map((coord) => latLng.LatLng(coord['lat'], coord['lng']))
-          .toList();
+    List<Polygon> polygons =
+        validItems.map<Polygon>((item) {
+          List<latLng.LatLng> points =
+              (item['coordenadas'] as List)
+                  .map((coord) => latLng.LatLng(coord['lat'], coord['lng']))
+                  .toList();
 
-      String hexColor = item['cor_hex'];
-      double opacidade = item['opacidade'] ?? 0.1;
-      double borderStrokeWidth = item['largura_linha'] ?? 3.0;
+          String hexColor = item['cor_hex'];
+          double opacidade = item['opacidade'] ?? 0.1;
+          double borderStrokeWidth = item['largura_linha'] ?? 3.0;
 
-      // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
-      if (hexColor.toUpperCase() == "#000000" &&
-          (_selectedMapType == "dark" || _selectedMapType == "satellite")) {
-        hexColor = "#FFFFFF";
-      }
+          // Se a cor for preta e o mapa for "dark" ou "satellite", mudar para branca
+          if (hexColor.toUpperCase() == "#000000" &&
+              (_selectedMapType == "dark" || _selectedMapType == "satellite")) {
+            hexColor = "#FFFFFF";
+          }
 
-      return Polygon(
-        points: points,
-        color: _hexToColor(hexColor).withOpacity(opacidade),
-        // label: item['nome'] ?? 'sem nome',
-        // labelPlacement: PolygonLabelPlacement.centroid,
-        // labelStyle: TextStyle(
-        //   color: Colors.black,
-        //   fontWeight: FontWeight.bold,
-        // ),
-        borderColor: _hexToColor(hexColor),
-        borderStrokeWidth: borderStrokeWidth,
-      );
-    }).toList(); // Agora, não há risco de valores nulos
+          return Polygon(
+            points: points,
+            color: _hexToColor(hexColor).withOpacity(opacidade),
+            // label: item['nome'] ?? 'sem nome',
+            // labelPlacement: PolygonLabelPlacement.centroid,
+            // labelStyle: TextStyle(
+            //   color: Colors.black,
+            //   fontWeight: FontWeight.bold,
+            // ),
+            borderColor: _hexToColor(hexColor),
+            borderStrokeWidth: borderStrokeWidth,
+          );
+        }).toList(); // Agora, não há risco de valores nulos
 
     setState(() {
       _polygons = polygons;
@@ -692,35 +714,42 @@ class _SupabaseFlutterMapCustomState extends State<SupabaseFlutterMapCustom> {
           padding: EdgeInsets.all(16),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            children: members
-                .map((memberData) => Column(
-                      children: [
-                        Text(
-                          memberData['nome_completo'] ?? 'Sem informação',
-                          style: TextStyle(
-                              fontSize: 20, fontWeight: FontWeight.bold),
-                        ),
-                        Text("📍 Latitude: ${memberData['latitude']}"),
-                        Text("📍 Longitude: ${memberData['longitude']}"),
-                        Text("📧 Facção: ${memberData['faccao_nome']}"),
-                        Image.network(
-                          (memberData['fotos_path'] is List &&
-                                  memberData['fotos_path'].isNotEmpty)
-                              ? memberData['fotos_path']
-                                  [0] // Pega a primeira imagem
-                              : _getMarkerIcon(memberData['faccao_nome']),
-                          width: 150,
-                          height: 150,
-                          fit: BoxFit.cover,
-                          errorBuilder: (context, error, stackTrace) {
-                            return Image.network(FFAppState().markerDefault,
-                                width: 150, height: 150);
-                          },
-                        ),
-                        Divider(),
-                      ],
-                    ))
-                .toList(),
+            children:
+                members
+                    .map(
+                      (memberData) => Column(
+                        children: [
+                          Text(
+                            memberData['nome_completo'] ?? 'Sem informação',
+                            style: TextStyle(
+                              fontSize: 20,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          Text("📍 Latitude: ${memberData['latitude']}"),
+                          Text("📍 Longitude: ${memberData['longitude']}"),
+                          Text("📧 Facção: ${memberData['faccao_nome']}"),
+                          Image.network(
+                            (memberData['fotos_path'] is List &&
+                                    memberData['fotos_path'].isNotEmpty)
+                                ? memberData['fotos_path'][0] // Pega a primeira imagem
+                                : _getMarkerIcon(memberData['faccao_nome']),
+                            width: 150,
+                            height: 150,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Image.network(
+                                FFAppState().markerDefault,
+                                width: 150,
+                                height: 150,
+                              );
+                            },
+                          ),
+                          Divider(),
+                        ],
+                      ),
+                    )
+                    .toList(),
           ),
         );
       },
